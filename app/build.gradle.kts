@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose.compiler)
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -13,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.project.cinenook"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -69,9 +71,6 @@ dependencies {
     implementation(libs.loggingInterceptor)
     implementation(libs.androidx.hilt.common)
     implementation(libs.androidx.hilt.navigation)
-    implementation(libs.androidx.hilt.lifecycle.viewmodel)
-    implementation(libs.androidx.hilt.navigation.fragment)
-    implementation(libs.androidx.hilt.lifecycle.viewmodel)
     implementation(libs.androidx.hilt.navigation.fragment)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
@@ -80,6 +79,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.transformations)
     implementation(libs.androidx.navigation.compose)
+    ksp(libs.hilt.compiler)
 
 
     implementation(libs.androidx.core.ktx)

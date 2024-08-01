@@ -26,7 +26,7 @@ data class MovieDetailResponse(
 	val genres: List<GenresItem?>? = null,
 
 	@field:SerializedName("popularity")
-	val popularity: Double? = null,
+	val popularity: Float? = null,
 
 	@field:SerializedName("production_countries")
 	val productionCountries: List<ProductionCountriesItem?>? = null,
@@ -65,7 +65,7 @@ data class MovieDetailResponse(
 	val releaseDate: String? = null,
 
 	@field:SerializedName("vote_average")
-	val voteAverage: Double? = null,
+	val voteAverage: Float? = null,
 
 	@field:SerializedName("belongs_to_collection")
 	val belongsToCollection: BelongsToCollection? = null,

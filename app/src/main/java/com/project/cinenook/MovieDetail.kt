@@ -1,7 +1,9 @@
 package com.project.cinenook
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,67 +17,82 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.twotone.Star
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.transform.RoundedCornersTransformation
-import com.commit451.coiltransformations.BlurTransformation
 import com.project.cinenook.data.MovieDetailViewModel
+import com.project.cinenook.data.MovieRecommendationViewModel
+import com.project.cinenook.data.RecommendationResultsItem
 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MovieDetail(
     movieId: Int,
-    viewModel: MovieDetailViewModel
+    movieRecommend: MovieRecommendationViewModel,
+    viewModel: MovieDetailViewModel,
+    navController: NavController,
+    onBack: () -> Unit
 ) {
     val movieDetail by viewModel.movieDetail.observeAsState()
+    val showShimmerBackdrop = remember { mutableStateOf(true) }
+    val showShimmer = remember { mutableStateOf(true) }
 
+    // Ensure this LaunchedEffect runs whenever movieId changes
     LaunchedEffect(movieId) {
+        showShimmerBackdrop.value = true
+        showShimmer.value = true
         viewModel.fetchMovieDetail(movieId)
+        movieRecommend.fetchRecommendation(movieId)
     }
 
-    movieDetail?.let { movie ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
+    // Menangani event tombol kembali
+    BackHandler {
+        viewModel.clearState()
+        movieRecommend.clearState()
+        onBack()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        movieDetail?.let { movie ->
             // Backdrop image
-            val showShimmerBackdrop = remember { mutableStateOf(true) }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data("https://image.tmdb.org/t/p/w780/${movie.backdropPath}")
@@ -84,9 +101,7 @@ fun MovieDetail(
                     .build(),
                 contentDescription = "Backdrop",
                 modifier = Modifier
-                    .background(shimmerBrush(
-                        showShimmer = showShimmerBackdrop.value
-                    ))
+                    .background(shimmerBrush(showShimmerBackdrop.value))
                     .fillMaxWidth()
                     .height(300.dp),
                 onSuccess = { showShimmerBackdrop.value = false },
@@ -99,6 +114,20 @@ fun MovieDetail(
                     .fillMaxWidth()
                     .height(300.dp)
                     .background(Color.Black.copy(alpha = 0.5f))
+            )
+
+            // add arrow back
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 32.dp)
+                    .clickable {
+                        viewModel.clearState()
+                        movieRecommend.clearState()
+                        onBack()
+                    }
             )
 
             // Content over the backdrop
@@ -114,7 +143,6 @@ fun MovieDetail(
                         .fillMaxWidth()
                         .zIndex(1f)
                 ) {
-                    val showShimmer = remember { mutableStateOf(true) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Poster image
                         AsyncImage(
@@ -127,9 +155,7 @@ fun MovieDetail(
                             contentDescription = "Poster",
                             modifier = Modifier
                                 .background(
-                                    shimmerBrush(
-                                        showShimmer = showShimmer.value
-                                    )
+                                    shimmerBrush(showShimmer.value)
                                 )
                                 .width(100.dp)
                                 .height(150.dp),
@@ -158,19 +184,15 @@ fun MovieDetail(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = (movie.voteAverage ?: 0.0).toString().take(3), // Format rating
+                                    text = "${(movie.voteAverage ?: 0.0).toString().take(3)}/10", // Format rating
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White
+                                )
+                                Text(text = " (${movie.voteCount ?: 0})",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = Color.White
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = "Release Date: ${movie.releaseDate ?: "N/A"}",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White
-                            )
 
                             Spacer(modifier = Modifier.height(4.dp))
 
@@ -191,7 +213,7 @@ fun MovieDetail(
                                                     )
                                                     .background(
                                                         MaterialTheme.colorScheme.inversePrimary.copy(
-                                                            alpha = 0.7f
+                                                            alpha = 0.6f
                                                         ), RoundedCornerShape(4.dp)
                                                     ) // Add background with alpha
                                                     .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -213,14 +235,14 @@ fun MovieDetail(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Tagline
-                movie.tagline?.let { tagline ->
+                if (movie.tagline.isNullOrEmpty().not()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            text = tagline,
+                            text = movie.tagline ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             fontStyle = FontStyle.Italic,
                             textAlign = TextAlign.Center,
@@ -233,22 +255,185 @@ fun MovieDetail(
                 // Movie overview
                 Text(
                     text = "Overview",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White
+                    style = MaterialTheme.typography.titleSmall
                 )
                 Text(
                     text = movie.overview ?: "No description available",
                     style = MaterialTheme.typography.bodySmall
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    // First Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        movie.runtime?.let { runtime ->
+                            Column(
+                             modifier = Modifier.weight(1f)
+                            ){
+                                Text(
+                                    text = "Duration",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Text(
+                                    text = (runtime.takeIf { it > 0 }?.let { "${it / 60}h ${it % 60}m" } ?: "N/A"),
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+
+                        movie.releaseDate?.let { releaseDate ->
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "Release Date",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Text(
+                                    text = Utils.formatReleaseDate(releaseDate),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Second Row
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Language origin
+                            Text(
+                                text = "Original Language",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                text = movie.spokenLanguages?.get(0)?.englishName ?: "N/A",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Popularity
+                            Text(
+                                text = "Popularity",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                text = movie.popularity?.toString() ?: "N/A",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Related movies
+                Text(
+                    text = "Related Movies",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                // Menampilkan daftar rekomendasi film horizontal
+                val movieRecommendation by movieRecommend.recommendation.observeAsState()
+
+                movieRecommendation?.let { recommendation ->
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        recommendation.results.let {
+                            items(it.size) { index ->
+                                val movieItem = it[index]
+                                key(movieItem.id) {  // Add key for proper recomposition
+                                    MovieItem(movie = movieItem) { selectedMovieId ->
+                                        navController.navigate("movie_detail/$selectedMovieId") {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
-    } ?: run {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
         }
     }
 }
 
+@Composable
+fun MovieItem(movie: RecommendationResultsItem, onClick: (Int) -> Unit) {
+
+    val showShimmer = remember { mutableStateOf(true) }
+
+    // Reset shimmer state when movie changes
+    LaunchedEffect(movie.id) {
+        showShimmer.value = true
+    }
+
+    Card(
+        modifier = Modifier
+            .padding(6.dp)
+            .wrapContentWidth()
+            .wrapContentHeight()
+            .clickable { onClick(movie.id) },
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 8.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .height(200.dp)
+                .width(150.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data("https://image.tmdb.org/t/p/w154/${movie.posterPath}")
+                    .transformations(RoundedCornersTransformation(16f))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = movie.title,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        shimmerBrush(
+                            showShimmer = showShimmer.value
+                        )
+                    )
+                    .width(100.dp)
+                    .height(150.dp),
+                onSuccess = { showShimmer.value = false },
+                contentScale = ContentScale.Crop
+            )
+            Text(
+                text = movie.title ?: "",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier
+                    .padding(6.dp),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}

@@ -1,6 +1,8 @@
 package com.project.cinenook.data
 
-class MovieRepositoryImpl(
+import javax.inject.Inject
+
+class MovieRepositoryImpl @Inject constructor(
     private val movieApi: MovieApi
 ) : MovieRepository {
     override suspend fun getPopularMovies(page: Int): MoviePopularResponse {
@@ -9,5 +11,9 @@ class MovieRepositoryImpl(
 
     override suspend fun getMovieDetail(id: Int): MovieDetailResponse {
         return movieApi.getMovieDetail(id)
+    }
+
+    override suspend fun getRecommendations(id: Int): MovieRecommendationResponse {
+        return movieApi.getRecommendations(id)
     }
 }
