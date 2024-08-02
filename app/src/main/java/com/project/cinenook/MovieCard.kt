@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +66,8 @@ fun MovieCard(movie: ResultsItem, onClick: (Int) -> Unit) {
                     .width(100.dp)
                     .height(150.dp),
                 onSuccess = { showShimmer.value = false },
+                onError = { showShimmer.value = false },
+                error = painterResource(id = R.drawable.no_image),
                 contentScale = ContentScale.Crop
             )
             Text(

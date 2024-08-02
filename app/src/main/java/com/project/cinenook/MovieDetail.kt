@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,7 +105,7 @@ fun MovieDetail(
                     .background(shimmerBrush(showShimmerBackdrop.value))
                     .fillMaxWidth()
                     .height(300.dp),
-                onSuccess = { showShimmerBackdrop.value = false },
+                error = painterResource(id = R.drawable.no_image),
                 contentScale = ContentScale.Crop
             )
 
@@ -160,6 +161,8 @@ fun MovieDetail(
                                 .width(100.dp)
                                 .height(150.dp),
                             onSuccess = { showShimmer.value = false },
+                            onError = { showShimmer.value = false },
+                            error = painterResource(id = R.drawable.no_image),
                             contentScale = ContentScale.Crop,
                         )
 
@@ -322,7 +325,7 @@ fun MovieDetail(
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
-                                text = movie.spokenLanguages?.get(0)?.englishName ?: "N/A",
+                                text = movie.spokenLanguages?.firstOrNull()?.englishName ?: "N/A",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -345,29 +348,28 @@ fun MovieDetail(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Related movies
-                Text(
-                    text = "Related Movies",
-                    style = MaterialTheme.typography.titleSmall
-                )
-
                 // Menampilkan daftar rekomendasi film horizontal
                 val movieRecommendation by movieRecommend.recommendation.observeAsState()
 
-                movieRecommendation?.let { recommendation ->
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        recommendation.results.let {
-                            items(it.size) { index ->
-                                val movieItem = it[index]
-                                key(movieItem.id) {  // Add key for proper recomposition
-                                    MovieItem(movie = movieItem) { selectedMovieId ->
-                                        navController.navigate("movie_detail/$selectedMovieId") {
-                                            launchSingleTop = true
-                                            restoreState = true
+                movieRecommendation?.results?.let { results ->
+                    if (results.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // Related movies
+                        Text(
+                            text = "Related Movies",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(results.size) { movieItem ->
+                                key(movieItem) {  // Add key for proper recomposition
+                                    results[movieItem]?.let {
+                                        MovieItem(movie = it) { selectedMovieId ->
+                                            navController.navigate("movie_detail/$selectedMovieId") {
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
                                         }
                                     }
                                 }
@@ -423,10 +425,12 @@ fun MovieItem(movie: RecommendationResultsItem, onClick: (Int) -> Unit) {
                     .width(100.dp)
                     .height(150.dp),
                 onSuccess = { showShimmer.value = false },
+                onError = { showShimmer.value = false },
+                error = painterResource(id = R.drawable.no_image),
                 contentScale = ContentScale.Crop
             )
             Text(
-                text = movie.title ?: "",
+                text = movie.title,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier

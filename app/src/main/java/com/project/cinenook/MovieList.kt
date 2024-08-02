@@ -16,10 +16,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.project.cinenook.data.MovieViewModel
+import com.project.cinenook.data.MovieListViewModel
 
 @Composable
-fun MovieList(viewModel: MovieViewModel, navController: NavController) {
+fun MovieList(viewModel: MovieListViewModel, navController: NavController) {
     val movieList = viewModel.moviePager.collectAsLazyPagingItems()
 
     // Observing load state

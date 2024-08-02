@@ -5,22 +5,28 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MovieApi {
-    @GET("popular")
+    @GET("movie/popular")
     suspend fun getPopularMovies(
         @Query("page") page: Int
     ): MoviePopularResponse
 
-    @GET("{movie_id}")
+    @GET("movie/{movie_id}")
     suspend fun getMovieDetail(
         @Path("movie_id") id: Int
     ): MovieDetailResponse
 
-    @GET("{movie_id}/recommendations")
+    @GET("movie/{movie_id}/recommendations")
     suspend fun getRecommendations(
         @Path("movie_id") id: Int
     ): MovieRecommendationResponse
 
+    @GET("search/movie")
+    suspend fun searchMovie(
+        @Query("query") query: String,
+        @Query("page") page: Int
+    ): MoviePopularResponse
+
     companion object {
-        const val BASE_URL = "https://api.themoviedb.org/3/movie/"
+        const val BASE_URL = "https://api.themoviedb.org/3/"
     }
 }

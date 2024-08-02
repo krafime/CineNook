@@ -16,4 +16,8 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun getRecommendations(id: Int): MovieRecommendationResponse {
         return movieApi.getRecommendations(id)
     }
+
+    override suspend fun searchMovie(query: String, page: Int): MoviePopularResponse {
+        return movieApi.searchMovie(query, page)
+    }
 }
