@@ -15,7 +15,7 @@ CineNook is a movie discovery application built using Jetpack Compose for Androi
 
 1. Clone the repository:
     ```
-    git clone https://github.com/yourusername/CineNook.git
+    git clone https://github.com/krafime/CineNook.git
     ```
 2. Open the project in Android Studio.
 3. Build and run the project on an Android emulator or physical device.
